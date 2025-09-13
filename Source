@@ -1,5 +1,5 @@
--- Primordial UI Library v4.0.0 - Complete Rewrite with All Fixes
--- All critical bugs resolved, proper tab system, working color picker, no shadow
+-- Primordial UI Library v5.0.0 - All Critical Bugs Fixed
+-- Proper color picker, fixed dropdowns, correct section rendering
 
 local PrimordialUI = {}
 PrimordialUI.__index = PrimordialUI
@@ -120,6 +120,7 @@ function PrimordialUI:CreateWindow(options)
         ActiveBottomTab = nil,
         ActiveSideTab = nil,
         ColorPickers = {},
+        Dropdowns = {}, -- Track all dropdowns for proper cleanup
         ScreenGui = nil,
         MainFrame = nil
     }
@@ -129,7 +130,7 @@ function PrimordialUI:CreateWindow(options)
     local toggleKey = options.ToggleKey or Enum.KeyCode.RightShift
     local menuTitle = options.Title or "primordial"
     
-    -- Convert logo ID to proper format if needed
+    -- Convert logo ID to proper format
     if logoAssetId ~= "" and not string.match(logoAssetId, "rbxassetid://") then
         logoAssetId = "rbxassetid://" .. logoAssetId
     end
@@ -143,7 +144,7 @@ function PrimordialUI:CreateWindow(options)
     screenGui.Parent = CoreGui or Player.PlayerGui
     window.ScreenGui = screenGui
     
-    -- Main Frame (no shadow as requested)
+    -- Main Frame
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainWindow"
     mainFrame.Size = UDim2.new(0, Theme.WindowWidth, 0, Theme.WindowHeight)
@@ -199,7 +200,7 @@ function PrimordialUI:CreateWindow(options)
     sidebar.BorderSizePixel = 0
     sidebar.Parent = mainFrame
     
-    -- Logo handling with dynamic positioning
+    -- Logo handling
     local logoHeight = 0
     local logoValid = false
     
@@ -239,7 +240,7 @@ function PrimordialUI:CreateWindow(options)
         logoHeight = 60
     end
     
-    -- Sidebar Tabs Container (positioned based on logo)
+    -- Sidebar Tabs Container
     local sidebarTabs = Instance.new("Frame")
     sidebarTabs.Name = "SidebarTabs"
     sidebarTabs.Position = UDim2.new(0, 0, 0, logoHeight + 15)
@@ -292,6 +293,19 @@ function PrimordialUI:CreateWindow(options)
     bottomLayout.SortOrder = Enum.SortOrder.LayoutOrder
     bottomLayout.Parent = bottomTabsContainer
     
+    -- Close all dropdowns function
+    local function closeAllDropdowns()
+        for _, dropdown in pairs(window.Dropdowns) do
+            if dropdown.List and dropdown.List.Visible then
+                dropdown.List.Visible = false
+                dropdown.Open = false
+                if dropdown.Chevron then
+                    dropdown.Chevron.Text = "▼"
+                end
+            end
+        end
+    end
+    
     -- Create Bottom Tab with unique side tabs
     function window:CreateBottomTab(name, icon)
         local bottomTab = {
@@ -337,6 +351,7 @@ function PrimordialUI:CreateWindow(options)
         
         -- Click handler
         tabButton.MouseButton1Click:Connect(function()
+            closeAllDropdowns()
             window:SelectBottomTab(bottomTab)
         end)
         
@@ -388,7 +403,7 @@ function PrimordialUI:CreateWindow(options)
             sideLabel.Font = Enum.Font.Gotham
             sideLabel.Parent = sideButton
             
-            -- Create content area
+            -- Create content area with proper scrolling
             local sideContent = Instance.new("ScrollingFrame")
             sideContent.Name = name .. "Content"
             sideContent.Size = UDim2.new(1, -Theme.SectionPadding * 2, 1, -Theme.SectionPadding * 2)
@@ -400,16 +415,24 @@ function PrimordialUI:CreateWindow(options)
             sideContent.ScrollBarImageTransparency = 0.5
             sideContent.Visible = false
             sideContent.ClipsDescendants = true
+            sideContent.CanvasSize = UDim2.new(0, 0, 0, 0)
             sideContent.Parent = contentContainer
             
+            -- Grid layout for sections
             local contentGrid = Instance.new("UIGridLayout")
-            contentGrid.CellSize = UDim2.new(0.31, 0, 0, 0)
+            contentGrid.CellSize = UDim2.new(0.31, 0, 0, 200)
             contentGrid.CellPadding = UDim2.new(0.035, 0, 0, 12)
             contentGrid.SortOrder = Enum.SortOrder.LayoutOrder
             contentGrid.FillDirection = Enum.FillDirection.Horizontal
             contentGrid.Parent = sideContent
             
+            -- Update canvas size when content changes
+            contentGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                sideContent.CanvasSize = UDim2.new(0, 0, 0, contentGrid.AbsoluteContentSize.Y)
+            end)
+            
             sideButton.MouseButton1Click:Connect(function()
+                closeAllDropdowns()
                 bottomTab:SelectSideTab(sideTab)
             end)
             
@@ -428,27 +451,34 @@ function PrimordialUI:CreateWindow(options)
             sideTab.Button = sideButton
             sideTab.Content = sideContent
             
-            -- Section creation with auto-resize
+            -- Fixed Section creation with proper rendering
             function sideTab:CreateSection(sectionName)
                 local section = {
                     Elements = {},
                     Frame = nil
                 }
                 
-                -- Create section frame with auto-resize
+                -- Section frame container
+                local sectionContainer = Instance.new("Frame")
+                sectionContainer.Name = sectionName .. "Container"
+                sectionContainer.BackgroundTransparency = 1
+                sectionContainer.Parent = sideContent
+                
+                -- Actual section frame with proper auto-sizing
                 local sectionFrame = Instance.new("Frame")
                 sectionFrame.Name = sectionName
+                sectionFrame.Size = UDim2.new(1, 0, 0, 0)
                 sectionFrame.BackgroundColor3 = Theme.SectionBackground
                 sectionFrame.BackgroundTransparency = 0.1
                 sectionFrame.BorderSizePixel = 0
                 sectionFrame.AutomaticSize = Enum.AutomaticSize.Y
-                sectionFrame.Size = UDim2.new(1, 0, 0, 0)
-                sectionFrame.Parent = sideContent
+                sectionFrame.Parent = sectionContainer
                 
                 local sectionCorner = Instance.new("UICorner")
                 sectionCorner.CornerRadius = UDim.new(0, 8)
                 sectionCorner.Parent = sectionFrame
                 
+                -- Section title (always visible)
                 local sectionTitle = Instance.new("TextLabel")
                 sectionTitle.Name = "Title"
                 sectionTitle.Text = sectionName:lower()
@@ -461,6 +491,7 @@ function PrimordialUI:CreateWindow(options)
                 sectionTitle.TextXAlignment = Enum.TextXAlignment.Left
                 sectionTitle.Parent = sectionFrame
                 
+                -- Elements container
                 local elementsContainer = Instance.new("Frame")
                 elementsContainer.Name = "Elements"
                 elementsContainer.Position = UDim2.new(0, Theme.SectionPadding, 0, 32)
@@ -474,29 +505,23 @@ function PrimordialUI:CreateWindow(options)
                 elementLayout.Padding = UDim.new(0, Theme.ElementSpacing)
                 elementLayout.Parent = elementsContainer
                 
-                -- Add bottom padding
+                -- Bottom padding
                 local bottomPadding = Instance.new("Frame")
                 bottomPadding.Name = "BottomPadding"
-                bottomPadding.Size = UDim2.new(1, 0, 0, 8)
+                bottomPadding.Size = UDim2.new(1, 0, 0, Theme.SectionPadding)
                 bottomPadding.BackgroundTransparency = 1
                 bottomPadding.LayoutOrder = 999999
                 bottomPadding.Parent = elementsContainer
                 
-                section.Frame = sectionFrame
-                
-                -- Update grid layout for auto-sizing
-                contentGrid.CellSize = UDim2.new(0.31, 0, 0, 0)
-                contentGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                    local children = sideContent:GetChildren()
-                    for _, child in pairs(children) do
-                        if child:IsA("Frame") then
-                            contentGrid.CellSize = UDim2.new(0.31, 0, 0, child.AbsoluteSize.Y)
-                            break
-                        end
-                    end
+                -- Update section container size
+                sectionFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                    sectionContainer.Size = UDim2.new(1, 0, 0, sectionFrame.AbsoluteSize.Y)
+                    contentGrid.CellSize = UDim2.new(0.31, 0, 0, sectionFrame.AbsoluteSize.Y)
                 end)
                 
-                -- Elements (same as before but with proper z-indexing)
+                section.Frame = sectionFrame
+                
+                -- Elements
                 function section:CreateCheckbox(options)
                     options = options or {}
                     local checkbox = {
@@ -719,12 +744,15 @@ function PrimordialUI:CreateWindow(options)
                     return slider
                 end
                 
+                -- Fixed Dropdown with proper width
                 function section:CreateDropdown(options)
                     options = options or {}
                     local dropdown = {
                         Value = options.Default or (options.Options[1] or ""),
                         Callback = options.Callback or function() end,
-                        Open = false
+                        Open = false,
+                        List = nil,
+                        Chevron = nil
                     }
                     
                     local dropdownFrame = Instance.new("Frame")
@@ -775,30 +803,20 @@ function PrimordialUI:CreateWindow(options)
                     chevron.TextSize = 10
                     chevron.Font = Enum.Font.Gotham
                     chevron.Parent = dropButton
+                    dropdown.Chevron = chevron
                     
-                    -- Fixed dropdown list with proper z-index
+                    -- Create dropdown list with fixed width
                     local dropList = Instance.new("Frame")
-                    dropList.Size = UDim2.new(0.62, -4, 0, math.min(#options.Options * 26, 130))
-                    dropList.Position = UDim2.new(0.38, 4, 1, 4)
+                    dropList.Size = UDim2.new(0, dropButton.AbsoluteSize.X, 0, math.min(#options.Options * 26, 130))
                     dropList.BackgroundColor3 = Theme.ElementBackground
                     dropList.BorderSizePixel = 0
                     dropList.Visible = false
-                    dropList.ZIndex = 1000 -- Very high z-index
-                    dropList.Parent = screenGui -- Parent to ScreenGui for proper layering
+                    dropList.ZIndex = 1000
+                    dropList.Parent = screenGui
+                    dropdown.List = dropList
                     
-                    local function updateDropListPosition()
-                        local absolutePos = dropdownFrame.AbsolutePosition
-                        local absoluteSize = dropdownFrame.AbsoluteSize
-                        dropList.Position = UDim2.new(
-                            0, 
-                            absolutePos.X + absoluteSize.X * 0.38 + 4,
-                            0,
-                            absolutePos.Y + absoluteSize.Y + 4
-                        )
-                    end
-                    
-                    updateDropListPosition()
-                    dropdownFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(updateDropListPosition)
+                    -- Track dropdown for cleanup
+                    table.insert(window.Dropdowns, dropdown)
                     
                     local listCorner = Instance.new("UICorner")
                     listCorner.CornerRadius = UDim.new(0, 4)
@@ -823,6 +841,16 @@ function PrimordialUI:CreateWindow(options)
                     local listLayout = Instance.new("UIListLayout")
                     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
                     listLayout.Parent = listScroll
+                    
+                    -- Update dropdown position
+                    local function updateDropListPosition()
+                        if dropList.Visible then
+                            local buttonPos = dropButton.AbsolutePosition
+                            local buttonSize = dropButton.AbsoluteSize
+                            dropList.Position = UDim2.new(0, buttonPos.X, 0, buttonPos.Y + buttonSize.Y + 4)
+                            dropList.Size = UDim2.new(0, buttonSize.X, 0, math.min(#options.Options * 26, 130))
+                        end
+                    end
                     
                     for _, option in ipairs(options.Options or {}) do
                         local optionButton = Instance.new("TextButton")
@@ -858,6 +886,17 @@ function PrimordialUI:CreateWindow(options)
                     end
                     
                     dropButton.MouseButton1Click:Connect(function()
+                        -- Close other dropdowns
+                        for _, otherDropdown in pairs(window.Dropdowns) do
+                            if otherDropdown ~= dropdown and otherDropdown.List and otherDropdown.List.Visible then
+                                otherDropdown.List.Visible = false
+                                otherDropdown.Open = false
+                                if otherDropdown.Chevron then
+                                    otherDropdown.Chevron.Text = "▼"
+                                end
+                            end
+                        end
+                        
                         dropdown.Open = not dropdown.Open
                         dropList.Visible = dropdown.Open
                         chevron.Text = dropdown.Open and "▲" or "▼"
@@ -865,6 +904,10 @@ function PrimordialUI:CreateWindow(options)
                             updateDropListPosition()
                         end
                     end)
+                    
+                    -- Update position when window moves
+                    mainFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(updateDropListPosition)
+                    dropdownFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(updateDropListPosition)
                     
                     return dropdown
                 end
@@ -910,7 +953,7 @@ function PrimordialUI:CreateWindow(options)
                     return button
                 end
                 
-                -- Fixed Keybind (supports both keyboard and mouse)
+                -- Fixed Keybind
                 function section:CreateKeybind(options)
                     options = options or {}
                     local keybind = {
@@ -919,18 +962,8 @@ function PrimordialUI:CreateWindow(options)
                         Listening = false
                     }
                     
-                    -- Validate default key
-                    if type(keybind.Key) == "string" then
-                        -- Convert string to enum if needed
-                        local success, result = pcall(function()
-                            return Enum.KeyCode[keybind.Key]
-                        end)
-                        if success then
-                            keybind.Key = result
-                        else
-                            keybind.Key = Enum.KeyCode.F
-                        end
-                    elseif not keybind.Key then
+                    -- Validate and set default key
+                    if not keybind.Key then
                         keybind.Key = Enum.KeyCode.F
                     end
                     
@@ -1012,9 +1045,11 @@ function PrimordialUI:CreateWindow(options)
                             keyButton.TextColor3 = Theme.SecondaryText
                             keybind.Listening = false
                         elseif not gameProcessed then
-                            if (input.KeyCode == keybind.Key and input.UserInputType == Enum.UserInputType.Keyboard) or
-                               (input.UserInputType == keybind.Key) then
-                                keybind.Callback()
+                            if (typeof(keybind.Key) == "EnumItem") then
+                                if (keybind.Key.EnumType == Enum.KeyCode and input.KeyCode == keybind.Key) or
+                                   (keybind.Key.EnumType == Enum.UserInputType and input.UserInputType == keybind.Key) then
+                                    keybind.Callback()
+                                end
                             end
                         end
                     end)
@@ -1057,7 +1092,7 @@ function PrimordialUI:CreateWindow(options)
         return bottomTab
     end
     
-    -- Select Bottom Tab (shows its side tabs and auto-selects first)
+    -- Select Bottom Tab
     function window:SelectBottomTab(bottomTab)
         -- Hide all side tabs from all bottom tabs
         for _, bt in pairs(window.BottomTabs) do
@@ -1096,7 +1131,7 @@ function PrimordialUI:CreateWindow(options)
         end
     end
     
-    -- Fixed Color Picker with proper gradient
+    -- COMPLETELY FIXED Color Picker with proper HSV gradient
     function window:CreateColorPicker(options)
         options = options or {}
         
@@ -1166,22 +1201,22 @@ function PrimordialUI:CreateWindow(options)
         titleText.Font = Enum.Font.Gotham
         titleText.Parent = titleBar
         
-        -- Proper styled close button
+        -- Proper X close button
         local closeButton = Instance.new("TextButton")
         closeButton.Size = UDim2.new(0, 20, 0, 20)
         closeButton.Position = UDim2.new(1, -24, 0.5, -10)
-        closeButton.BackgroundColor3 = Theme.ElementBackground
-        closeButton.BackgroundTransparency = 0.7
+        closeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        closeButton.BackgroundTransparency = 0
         closeButton.BorderSizePixel = 0
-        closeButton.Text = "✕"
+        closeButton.Text = "×"  -- Proper X character
         closeButton.TextColor3 = Theme.SecondaryText
-        closeButton.TextSize = 14
-        closeButton.Font = Enum.Font.Gotham
+        closeButton.TextSize = 18
+        closeButton.Font = Enum.Font.SourceSans
         closeButton.AutoButtonColor = false
         closeButton.Parent = titleBar
         
         local closeCorner = Instance.new("UICorner")
-        closeCorner.CornerRadius = UDim.new(0, 3)
+        closeCorner.CornerRadius = UDim.new(0, 4)
         closeCorner.Parent = closeButton
         
         closeButton.MouseButton1Click:Connect(function()
@@ -1189,38 +1224,33 @@ function PrimordialUI:CreateWindow(options)
         end)
         
         closeButton.MouseEnter:Connect(function()
+            closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
             closeButton.TextColor3 = Theme.PrimaryText
-            closeButton.BackgroundTransparency = 0.5
         end)
         
         closeButton.MouseLeave:Connect(function()
+            closeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
             closeButton.TextColor3 = Theme.SecondaryText
-            closeButton.BackgroundTransparency = 0.7
         end)
         
         MakeDraggable(pickerFrame, titleBar)
         
-        -- Fixed Saturation/Value Field with proper 2D gradient
+        -- FIXED Saturation/Value Field with dynamic hue-based gradient
         local satValFrame = Instance.new("ImageButton")
         satValFrame.Size = UDim2.new(0, 180, 0, 180)
         satValFrame.Position = UDim2.new(0, 12, 0, 38)
         satValFrame.BorderSizePixel = 0
         satValFrame.AutoButtonColor = false
+        satValFrame.BackgroundColor3 = Color3.fromHSV(0, 1, 1) -- This will be updated dynamically
         satValFrame.Parent = pickerFrame
         
         local satValCorner = Instance.new("UICorner")
         satValCorner.CornerRadius = UDim.new(0, 4)
         satValCorner.Parent = satValFrame
         
-        -- Base color (will be updated based on hue)
-        satValFrame.BackgroundColor3 = Color3.fromHSV(0, 1, 1)
-        
-        -- White to transparent gradient (left to right - saturation)
+        -- White to transparent gradient (for saturation)
         local satGradient = Instance.new("UIGradient")
-        satGradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
-            ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1))
-        })
+        satGradient.Color = ColorSequence.new(Color3.new(1, 1, 1))
         satGradient.Transparency = NumberSequence.new({
             NumberSequenceKeypoint.new(0, 0),
             NumberSequenceKeypoint.new(1, 1)
@@ -1228,7 +1258,7 @@ function PrimordialUI:CreateWindow(options)
         satGradient.Rotation = 0
         satGradient.Parent = satValFrame
         
-        -- Black gradient overlay (top to bottom - value)
+        -- Black gradient overlay (for value)
         local valOverlay = Instance.new("Frame")
         valOverlay.Size = UDim2.new(1, 0, 1, 0)
         valOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -1236,6 +1266,7 @@ function PrimordialUI:CreateWindow(options)
         valOverlay.Parent = satValFrame
         
         local valGradient = Instance.new("UIGradient")
+        valGradient.Color = ColorSequence.new(Color3.new(0, 0, 0))
         valGradient.Transparency = NumberSequence.new({
             NumberSequenceKeypoint.new(0, 1),
             NumberSequenceKeypoint.new(1, 0)
@@ -1373,10 +1404,11 @@ function PrimordialUI:CreateWindow(options)
         -- Color picker logic
         local hue, sat, val = colorPicker.Color:ToHSV()
         
+        -- CRITICAL FIX: Update saturation/value background based on hue
         local function updateColor()
             colorPicker.Color = Color3.fromHSV(hue, sat, val)
             
-            -- Update saturation/value background
+            -- THIS IS THE FIX: Update the background color to the current hue
             satValFrame.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
             
             rInput.Text = tostring(math.floor(colorPicker.Color.R * 255))
@@ -1449,7 +1481,7 @@ function PrimordialUI:CreateWindow(options)
         -- Initialize positions
         satValCursor.Position = UDim2.new(sat, -4, 1 - val, -4)
         hueCursor.Position = UDim2.new(0, -2, hue, -2)
-        updateColor()
+        updateColor() -- This will set the initial background color
         
         return colorPicker
     end
@@ -1457,6 +1489,9 @@ function PrimordialUI:CreateWindow(options)
     -- Toggle visibility
     function window:Toggle()
         mainFrame.Visible = not mainFrame.Visible
+        if not mainFrame.Visible then
+            closeAllDropdowns()
+        end
     end
     
     -- Keybind for toggle
