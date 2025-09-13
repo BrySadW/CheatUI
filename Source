@@ -1,5 +1,5 @@
--- Primordial UI Library v5.0.0 - All Critical Bugs Fixed
--- Proper color picker, fixed dropdowns, correct section rendering
+-- Primordial UI Library v6.0.0 - Final Complete Version
+-- All features implemented with correct HSV color picker
 
 local PrimordialUI = {}
 PrimordialUI.__index = PrimordialUI
@@ -9,53 +9,105 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
+local GuiService = game:GetService("GuiService")
+local HttpService = game:GetService("HttpService")
 
 local Player = Players.LocalPlayer
 local Mouse = Player:GetMouse()
 
--- Theme Configuration
-local Theme = {
-    -- Background hierarchy
-    MainBackground = Color3.fromRGB(18, 18, 18),
-    PanelBackground = Color3.fromRGB(25, 25, 25),
-    SectionBackground = Color3.fromRGB(32, 32, 32),
-    ElementBackground = Color3.fromRGB(38, 38, 38),
-    
-    -- Text colors
-    PrimaryText = Color3.fromRGB(255, 255, 255),
-    SecondaryText = Color3.fromRGB(190, 190, 190),
-    DimText = Color3.fromRGB(140, 140, 140),
-    SectionTitle = Color3.fromRGB(160, 160, 160),
-    
-    -- Accent colors
-    Accent = Color3.fromRGB(100, 149, 237),
-    AccentDim = Color3.fromRGB(70, 119, 207),
-    
-    -- Component colors
-    CheckboxBorder = Color3.fromRGB(55, 55, 55),
-    CheckboxFill = Color3.fromRGB(100, 149, 237),
-    SliderTrack = Color3.fromRGB(45, 45, 45),
-    SliderFill = Color3.fromRGB(100, 149, 237),
-    SliderThumb = Color3.fromRGB(255, 255, 255),
-    DropdownBorder = Color3.fromRGB(55, 55, 55),
-    
-    -- Tab colors
-    TabInactive = Color3.fromRGB(35, 35, 35),
-    TabActive = Color3.fromRGB(100, 149, 237),
-    TabHover = Color3.fromRGB(50, 50, 50),
-    
-    -- Sizes
-    WindowWidth = 850,
-    WindowHeight = 650,
-    SidebarWidth = 70,
-    TopBarHeight = 38,
-    BottomBarHeight = 58,
-    SectionPadding = 12,
-    ElementHeight = 26,
-    ElementSpacing = 6,
-    CheckboxSize = 16,
-    SliderTrackHeight = 5,
-    SliderThumbSize = 12
+-- Theme System
+local ThemeManager = {
+    Current = "Dark",
+    DPIScale = 1,
+    Font = Enum.Font.Gotham,
+    Themes = {
+        Dark = {
+            MainBackground = Color3.fromRGB(18, 18, 18),
+            PanelBackground = Color3.fromRGB(25, 25, 25),
+            SectionBackground = Color3.fromRGB(32, 32, 32),
+            ElementBackground = Color3.fromRGB(38, 38, 38),
+            PrimaryText = Color3.fromRGB(255, 255, 255),
+            SecondaryText = Color3.fromRGB(190, 190, 190),
+            DimText = Color3.fromRGB(140, 140, 140),
+            SectionTitle = Color3.fromRGB(160, 160, 160),
+            Accent = Color3.fromRGB(100, 149, 237),
+            AccentDim = Color3.fromRGB(70, 119, 207),
+            CheckboxBorder = Color3.fromRGB(55, 55, 55),
+            CheckboxFill = Color3.fromRGB(100, 149, 237),
+            SliderTrack = Color3.fromRGB(45, 45, 45),
+            SliderFill = Color3.fromRGB(100, 149, 237),
+            SliderThumb = Color3.fromRGB(255, 255, 255),
+            DropdownBorder = Color3.fromRGB(55, 55, 55),
+            TabInactive = Color3.fromRGB(35, 35, 35),
+            TabActive = Color3.fromRGB(100, 149, 237),
+            TabHover = Color3.fromRGB(50, 50, 50),
+            NotificationBackground = Color3.fromRGB(35, 35, 35),
+            NotificationBorder = Color3.fromRGB(100, 149, 237),
+            DividerColor = Color3.fromRGB(50, 50, 50)
+        },
+        Light = {
+            MainBackground = Color3.fromRGB(240, 240, 240),
+            PanelBackground = Color3.fromRGB(250, 250, 250),
+            SectionBackground = Color3.fromRGB(255, 255, 255),
+            ElementBackground = Color3.fromRGB(245, 245, 245),
+            PrimaryText = Color3.fromRGB(0, 0, 0),
+            SecondaryText = Color3.fromRGB(60, 60, 60),
+            DimText = Color3.fromRGB(120, 120, 120),
+            SectionTitle = Color3.fromRGB(80, 80, 80),
+            Accent = Color3.fromRGB(100, 149, 237),
+            AccentDim = Color3.fromRGB(130, 179, 255),
+            CheckboxBorder = Color3.fromRGB(200, 200, 200),
+            CheckboxFill = Color3.fromRGB(100, 149, 237),
+            SliderTrack = Color3.fromRGB(220, 220, 220),
+            SliderFill = Color3.fromRGB(100, 149, 237),
+            SliderThumb = Color3.fromRGB(255, 255, 255),
+            DropdownBorder = Color3.fromRGB(200, 200, 200),
+            TabInactive = Color3.fromRGB(230, 230, 230),
+            TabActive = Color3.fromRGB(100, 149, 237),
+            TabHover = Color3.fromRGB(210, 210, 210),
+            NotificationBackground = Color3.fromRGB(250, 250, 250),
+            NotificationBorder = Color3.fromRGB(100, 149, 237),
+            DividerColor = Color3.fromRGB(220, 220, 220)
+        }
+    }
+}
+
+function ThemeManager:SetTheme(themeName)
+    if self.Themes[themeName] then
+        self.Current = themeName
+    end
+end
+
+function ThemeManager:SetFont(font)
+    self.Font = font
+end
+
+function ThemeManager:SetDPIScale(scale)
+    self.DPIScale = scale
+end
+
+function ThemeManager:GetTheme()
+    return self.Themes[self.Current]
+end
+
+local Theme = ThemeManager:GetTheme()
+
+-- Mobile Support Detection
+local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+-- Sizes Configuration
+local Sizes = {
+    WindowWidth = 850 * ThemeManager.DPIScale,
+    WindowHeight = 650 * ThemeManager.DPIScale,
+    SidebarWidth = 70 * ThemeManager.DPIScale,
+    TopBarHeight = 38 * ThemeManager.DPIScale,
+    BottomBarHeight = 58 * ThemeManager.DPIScale,
+    SectionPadding = 12 * ThemeManager.DPIScale,
+    ElementHeight = 26 * ThemeManager.DPIScale,
+    ElementSpacing = 6 * ThemeManager.DPIScale,
+    CheckboxSize = 16 * ThemeManager.DPIScale,
+    SliderTrackHeight = 5 * ThemeManager.DPIScale,
+    SliderThumbSize = 12 * ThemeManager.DPIScale
 }
 
 -- Utility Functions
@@ -85,7 +137,8 @@ local function MakeDraggable(frame, handle)
     end
     
     handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+           (IsMobile and input.UserInputType == Enum.UserInputType.Touch) then
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
@@ -99,7 +152,8 @@ local function MakeDraggable(frame, handle)
     end)
     
     handle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
+        if input.UserInputType == Enum.UserInputType.MouseMovement or
+           (IsMobile and input.UserInputType == Enum.UserInputType.Touch) then
             dragInput = input
         end
     end)
@@ -111,26 +165,56 @@ local function MakeDraggable(frame, handle)
     end)
 end
 
+-- Notification System
+local NotificationQueue = {}
+local NotificationFrame = nil
+
+local function CreateNotificationSystem(parent)
+    local notifContainer = Instance.new("Frame")
+    notifContainer.Name = "NotificationContainer"
+    notifContainer.Size = UDim2.new(0, 300, 1, 0)
+    notifContainer.Position = UDim2.new(1, -310, 0, 10)
+    notifContainer.BackgroundTransparency = 1
+    notifContainer.Parent = parent
+    
+    local notifLayout = Instance.new("UIListLayout")
+    notifLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    notifLayout.Padding = UDim.new(0, 8)
+    notifLayout.Parent = notifContainer
+    
+    NotificationFrame = notifContainer
+end
+
 -- Main Library
 function PrimordialUI:CreateWindow(options)
     options = options or {}
+    Theme = ThemeManager:GetTheme()
     
     local window = {
         BottomTabs = {},
         ActiveBottomTab = nil,
         ActiveSideTab = nil,
         ColorPickers = {},
-        Dropdowns = {}, -- Track all dropdowns for proper cleanup
+        Dropdowns = {},
+        Dependencies = {},
+        Tooltips = {},
         ScreenGui = nil,
-        MainFrame = nil
+        MainFrame = nil,
+        OnUnload = nil,
+        Watermark = nil,
+        KeybindMenu = nil,
+        CustomCursor = nil
     }
     
     -- User Customization
     local logoAssetId = options.LogoAssetId or ""
     local toggleKey = options.ToggleKey or Enum.KeyCode.RightShift
     local menuTitle = options.Title or "primordial"
+    local customCursor = options.CustomCursor or false
+    local showWatermark = options.Watermark or false
+    local showKeybindMenu = options.KeybindMenu or false
     
-    -- Convert logo ID to proper format
+    -- Convert logo ID
     if logoAssetId ~= "" and not string.match(logoAssetId, "rbxassetid://") then
         logoAssetId = "rbxassetid://" .. logoAssetId
     end
@@ -144,11 +228,65 @@ function PrimordialUI:CreateWindow(options)
     screenGui.Parent = CoreGui or Player.PlayerGui
     window.ScreenGui = screenGui
     
+    -- Create Notification System
+    CreateNotificationSystem(screenGui)
+    
+    -- Watermark
+    if showWatermark then
+        local watermark = Instance.new("TextLabel")
+        watermark.Name = "Watermark"
+        watermark.Size = UDim2.new(0, 200, 0, 30)
+        watermark.Position = UDim2.new(0, 10, 0, 10)
+        watermark.BackgroundColor3 = Theme.PanelBackground
+        watermark.BackgroundTransparency = 0.2
+        watermark.Text = menuTitle .. " | " .. os.date("%X")
+        watermark.TextColor3 = Theme.PrimaryText
+        watermark.TextSize = 12
+        watermark.Font = ThemeManager.Font
+        watermark.Parent = screenGui
+        
+        local waterCorner = Instance.new("UICorner")
+        waterCorner.CornerRadius = UDim.new(0, 6)
+        waterCorner.Parent = watermark
+        
+        window.Watermark = watermark
+        
+        -- Update watermark time
+        spawn(function()
+            while watermark.Parent do
+                watermark.Text = menuTitle .. " | " .. os.date("%X")
+                wait(1)
+            end
+        end)
+    end
+    
+    -- Custom Cursor
+    if customCursor then
+        local cursor = Instance.new("ImageLabel")
+        cursor.Name = "CustomCursor"
+        cursor.Size = UDim2.new(0, 20, 0, 20)
+        cursor.BackgroundTransparency = 1
+        cursor.Image = "rbxasset://textures/Cursors/KeyboardMouse/ArrowCursor.png"
+        cursor.ZIndex = 10000
+        cursor.Parent = screenGui
+        
+        window.CustomCursor = cursor
+        
+        RunService.RenderStepped:Connect(function()
+            if cursor.Parent then
+                local mousePos = UserInputService:GetMouseLocation()
+                cursor.Position = UDim2.new(0, mousePos.X, 0, mousePos.Y)
+            end
+        end)
+        
+        UserInputService.MouseIconEnabled = false
+    end
+    
     -- Main Frame
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainWindow"
-    mainFrame.Size = UDim2.new(0, Theme.WindowWidth, 0, Theme.WindowHeight)
-    mainFrame.Position = UDim2.new(0.5, -Theme.WindowWidth/2, 0.5, -Theme.WindowHeight/2)
+    mainFrame.Size = UDim2.new(0, Sizes.WindowWidth, 0, Sizes.WindowHeight)
+    mainFrame.Position = UDim2.new(0.5, -Sizes.WindowWidth/2, 0.5, -Sizes.WindowHeight/2)
     mainFrame.BackgroundColor3 = Theme.MainBackground
     mainFrame.BorderSizePixel = 0
     mainFrame.ClipsDescendants = true
@@ -162,7 +300,7 @@ function PrimordialUI:CreateWindow(options)
     -- Top Bar
     local topBar = Instance.new("Frame")
     topBar.Name = "TopBar"
-    topBar.Size = UDim2.new(1, 0, 0, Theme.TopBarHeight)
+    topBar.Size = UDim2.new(1, 0, 0, Sizes.TopBarHeight)
     topBar.BackgroundColor3 = Theme.PanelBackground
     topBar.BorderSizePixel = 0
     topBar.Parent = mainFrame
@@ -186,24 +324,22 @@ function PrimordialUI:CreateWindow(options)
     title.BackgroundTransparency = 1
     title.TextColor3 = Theme.PrimaryText
     title.TextSize = 15
-    title.Font = Enum.Font.Gotham
+    title.Font = ThemeManager.Font
     title.Parent = topBar
     
     MakeDraggable(mainFrame, topBar)
     
-    -- Left Sidebar
+    -- Left Sidebar with Scrollbar
     local sidebar = Instance.new("Frame")
     sidebar.Name = "Sidebar"
-    sidebar.Position = UDim2.new(0, 0, 0, Theme.TopBarHeight)
-    sidebar.Size = UDim2.new(0, Theme.SidebarWidth, 1, -Theme.TopBarHeight - Theme.BottomBarHeight)
+    sidebar.Position = UDim2.new(0, 0, 0, Sizes.TopBarHeight)
+    sidebar.Size = UDim2.new(0, Sizes.SidebarWidth, 1, -Sizes.TopBarHeight - Sizes.BottomBarHeight)
     sidebar.BackgroundColor3 = Theme.PanelBackground
     sidebar.BorderSizePixel = 0
     sidebar.Parent = mainFrame
     
     -- Logo handling
     local logoHeight = 0
-    local logoValid = false
-    
     if logoAssetId ~= "" then
         local success = pcall(function()
             local logoContainer = Instance.new("Frame")
@@ -222,43 +358,38 @@ function PrimordialUI:CreateWindow(options)
             logo.Parent = logoContainer
             
             logoHeight = 60
-            logoValid = true
         end)
     end
     
-    if not logoValid then
-        -- Default hourglass if no logo
-        local defaultLogo = Instance.new("TextLabel")
-        defaultLogo.Text = "⧗"
-        defaultLogo.Size = UDim2.new(0, 48, 0, 48)
-        defaultLogo.Position = UDim2.new(0.5, -24, 0, 12)
-        defaultLogo.BackgroundTransparency = 1
-        defaultLogo.TextColor3 = Theme.SecondaryText
-        defaultLogo.TextSize = 32
-        defaultLogo.Font = Enum.Font.Gotham
-        defaultLogo.Parent = sidebar
-        logoHeight = 60
-    end
-    
-    -- Sidebar Tabs Container
-    local sidebarTabs = Instance.new("Frame")
-    sidebarTabs.Name = "SidebarTabs"
-    sidebarTabs.Position = UDim2.new(0, 0, 0, logoHeight + 15)
-    sidebarTabs.Size = UDim2.new(1, 0, 1, -(logoHeight + 15))
-    sidebarTabs.BackgroundTransparency = 1
-    sidebarTabs.Parent = sidebar
+    -- Sidebar Tabs Container with Scrollbar
+    local sidebarScroll = Instance.new("ScrollingFrame")
+    sidebarScroll.Name = "SidebarScroll"
+    sidebarScroll.Position = UDim2.new(0, 0, 0, logoHeight + 15)
+    sidebarScroll.Size = UDim2.new(1, 0, 1, -(logoHeight + 15))
+    sidebarScroll.BackgroundTransparency = 1
+    sidebarScroll.BorderSizePixel = 0
+    sidebarScroll.ScrollBarThickness = 3
+    sidebarScroll.ScrollBarImageColor3 = Theme.Accent
+    sidebarScroll.ScrollBarImageTransparency = 0.5
+    sidebarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    sidebarScroll.Parent = sidebar
     
     local sidebarLayout = Instance.new("UIListLayout")
     sidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
     sidebarLayout.Padding = UDim.new(0, 6)
     sidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    sidebarLayout.Parent = sidebarTabs
+    sidebarLayout.Parent = sidebarScroll
+    
+    -- Auto-resize sidebar scroll
+    sidebarLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        sidebarScroll.CanvasSize = UDim2.new(0, 0, 0, sidebarLayout.AbsoluteContentSize.Y)
+    end)
     
     -- Content Container
     local contentContainer = Instance.new("Frame")
     contentContainer.Name = "ContentContainer"
-    contentContainer.Position = UDim2.new(0, Theme.SidebarWidth, 0, Theme.TopBarHeight)
-    contentContainer.Size = UDim2.new(1, -Theme.SidebarWidth, 1, -Theme.TopBarHeight - Theme.BottomBarHeight)
+    contentContainer.Position = UDim2.new(0, Sizes.SidebarWidth, 0, Sizes.TopBarHeight)
+    contentContainer.Size = UDim2.new(1, -Sizes.SidebarWidth, 1, -Sizes.TopBarHeight - Sizes.BottomBarHeight)
     contentContainer.BackgroundTransparency = 1
     contentContainer.ClipsDescendants = true
     contentContainer.Parent = mainFrame
@@ -266,8 +397,8 @@ function PrimordialUI:CreateWindow(options)
     -- Bottom Navigation Bar
     local bottomBar = Instance.new("Frame")
     bottomBar.Name = "BottomBar"
-    bottomBar.Position = UDim2.new(0, 0, 1, -Theme.BottomBarHeight)
-    bottomBar.Size = UDim2.new(1, 0, 0, Theme.BottomBarHeight)
+    bottomBar.Position = UDim2.new(0, 0, 1, -Sizes.BottomBarHeight)
+    bottomBar.Size = UDim2.new(1, 0, 0, Sizes.BottomBarHeight)
     bottomBar.BackgroundColor3 = Theme.PanelBackground
     bottomBar.BorderSizePixel = 0
     bottomBar.Parent = mainFrame
@@ -293,7 +424,35 @@ function PrimordialUI:CreateWindow(options)
     bottomLayout.SortOrder = Enum.SortOrder.LayoutOrder
     bottomLayout.Parent = bottomTabsContainer
     
-    -- Close all dropdowns function
+    -- Keybind Menu
+    if showKeybindMenu then
+        local keybindMenu = Instance.new("Frame")
+        keybindMenu.Name = "KeybindMenu"
+        keybindMenu.Size = UDim2.new(0, 200, 0, 300)
+        keybindMenu.Position = UDim2.new(0, 10, 0.5, -150)
+        keybindMenu.BackgroundColor3 = Theme.PanelBackground
+        keybindMenu.BackgroundTransparency = 0.1
+        keybindMenu.Visible = false
+        keybindMenu.Parent = screenGui
+        
+        local keybindCorner = Instance.new("UICorner")
+        keybindCorner.CornerRadius = UDim.new(0, 8)
+        keybindCorner.Parent = keybindMenu
+        
+        local keybindTitle = Instance.new("TextLabel")
+        keybindTitle.Text = "Keybinds"
+        keybindTitle.Size = UDim2.new(1, 0, 0, 30)
+        keybindTitle.BackgroundTransparency = 1
+        keybindTitle.TextColor3 = Theme.PrimaryText
+        keybindTitle.TextSize = 14
+        keybindTitle.Font = ThemeManager.Font
+        keybindTitle.Parent = keybindMenu
+        
+        MakeDraggable(keybindMenu)
+        window.KeybindMenu = keybindMenu
+    end
+    
+    -- Close all dropdowns
     local function closeAllDropdowns()
         for _, dropdown in pairs(window.Dropdowns) do
             if dropdown.List and dropdown.List.Visible then
@@ -306,7 +465,101 @@ function PrimordialUI:CreateWindow(options)
         end
     end
     
-    -- Create Bottom Tab with unique side tabs
+    -- Notification Function
+    function window:Notify(options)
+        options = options or {}
+        local text = options.Text or "Notification"
+        local duration = options.Duration or 3
+        local type = options.Type or "Info"
+        
+        local notification = Instance.new("Frame")
+        notification.Size = UDim2.new(1, 0, 0, 60)
+        notification.BackgroundColor3 = Theme.NotificationBackground
+        notification.BackgroundTransparency = 0.1
+        notification.Parent = NotificationFrame
+        
+        local notifCorner = Instance.new("UICorner")
+        notifCorner.CornerRadius = UDim.new(0, 8)
+        notifCorner.Parent = notification
+        
+        local notifBorder = Instance.new("UIStroke")
+        notifBorder.Color = type == "Success" and Color3.fromRGB(0, 255, 0) or 
+                          type == "Error" and Color3.fromRGB(255, 0, 0) or 
+                          Theme.NotificationBorder
+        notifBorder.Thickness = 2
+        notifBorder.Parent = notification
+        
+        local notifText = Instance.new("TextLabel")
+        notifText.Text = text
+        notifText.Size = UDim2.new(1, -10, 1, 0)
+        notifText.Position = UDim2.new(0, 5, 0, 0)
+        notifText.BackgroundTransparency = 1
+        notifText.TextColor3 = Theme.PrimaryText
+        notifText.TextSize = 13
+        notifText.Font = ThemeManager.Font
+        notifText.TextWrapped = true
+        notifText.TextXAlignment = Enum.TextXAlignment.Left
+        notifText.Parent = notification
+        
+        -- Fade in
+        notification.BackgroundTransparency = 1
+        notifText.TextTransparency = 1
+        CreateTween(notification, {BackgroundTransparency = 0.1}, 0.3)
+        CreateTween(notifText, {TextTransparency = 0}, 0.3)
+        
+        -- Auto remove
+        spawn(function()
+            wait(duration)
+            CreateTween(notification, {BackgroundTransparency = 1}, 0.3)
+            CreateTween(notifText, {TextTransparency = 1}, 0.3)
+            wait(0.3)
+            notification:Destroy()
+        end)
+    end
+    
+    -- Tooltip System
+    local tooltipFrame = Instance.new("Frame")
+    tooltipFrame.Name = "Tooltip"
+    tooltipFrame.Size = UDim2.new(0, 200, 0, 30)
+    tooltipFrame.BackgroundColor3 = Theme.PanelBackground
+    tooltipFrame.BorderSizePixel = 0
+    tooltipFrame.Visible = false
+    tooltipFrame.ZIndex = 9999
+    tooltipFrame.Parent = screenGui
+    
+    local tooltipCorner = Instance.new("UICorner")
+    tooltipCorner.CornerRadius = UDim.new(0, 6)
+    tooltipCorner.Parent = tooltipFrame
+    
+    local tooltipText = Instance.new("TextLabel")
+    tooltipText.Size = UDim2.new(1, -10, 1, 0)
+    tooltipText.Position = UDim2.new(0, 5, 0, 0)
+    tooltipText.BackgroundTransparency = 1
+    tooltipText.TextColor3 = Theme.PrimaryText
+    tooltipText.TextSize = 12
+    tooltipText.Font = ThemeManager.Font
+    tooltipText.TextWrapped = true
+    tooltipText.Parent = tooltipFrame
+    
+    function window:AddTooltip(element, text)
+        element.MouseEnter:Connect(function()
+            tooltipText.Text = text
+            tooltipFrame.Visible = true
+            
+            RunService.RenderStepped:Connect(function()
+                if tooltipFrame.Visible then
+                    local mousePos = UserInputService:GetMouseLocation()
+                    tooltipFrame.Position = UDim2.new(0, mousePos.X + 10, 0, mousePos.Y + 10)
+                end
+            end)
+        end)
+        
+        element.MouseLeave:Connect(function()
+            tooltipFrame.Visible = false
+        end)
+    end
+    
+    -- Create Bottom Tab
     function window:CreateBottomTab(name, icon)
         local bottomTab = {
             Name = name,
@@ -316,7 +569,6 @@ function PrimordialUI:CreateWindow(options)
             Button = nil
         }
         
-        -- Create bottom tab button
         local tabButton = Instance.new("TextButton")
         tabButton.Name = name
         tabButton.Size = UDim2.new(1/6, 0, 1, 0)
@@ -332,7 +584,7 @@ function PrimordialUI:CreateWindow(options)
         iconLabel.Text = icon or "?"
         iconLabel.TextColor3 = Theme.DimText
         iconLabel.TextSize = 20
-        iconLabel.Font = Enum.Font.Gotham
+        iconLabel.Font = ThemeManager.Font
         iconLabel.Parent = tabButton
         
         local nameLabel = Instance.new("TextLabel")
@@ -342,14 +594,13 @@ function PrimordialUI:CreateWindow(options)
         nameLabel.Text = name:lower()
         nameLabel.TextColor3 = Theme.DimText
         nameLabel.TextSize = 10
-        nameLabel.Font = Enum.Font.Gotham
+        nameLabel.Font = ThemeManager.Font
         nameLabel.Parent = tabButton
         
         bottomTab.Button = tabButton
         bottomTab.IconLabel = iconLabel
         bottomTab.NameLabel = nameLabel
         
-        -- Click handler
         tabButton.MouseButton1Click:Connect(function()
             closeAllDropdowns()
             window:SelectBottomTab(bottomTab)
@@ -369,7 +620,7 @@ function PrimordialUI:CreateWindow(options)
             end
         end)
         
-        -- Create Side Tab for this bottom tab
+        -- Create Side Tab
         function bottomTab:CreateSideTab(name)
             local sideTab = {
                 Name = name,
@@ -378,17 +629,16 @@ function PrimordialUI:CreateWindow(options)
                 Button = nil
             }
             
-            -- Create side tab button
             local sideButton = Instance.new("TextButton")
             sideButton.Name = name
-            sideButton.Size = UDim2.new(0, Theme.SidebarWidth - 16, 0, 42)
+            sideButton.Size = UDim2.new(0, Sizes.SidebarWidth - 16, 0, 42)
             sideButton.BackgroundColor3 = Theme.TabInactive
             sideButton.BackgroundTransparency = 0.5
             sideButton.BorderSizePixel = 0
             sideButton.AutoButtonColor = false
             sideButton.Text = ""
             sideButton.Visible = false
-            sideButton.Parent = sidebarTabs
+            sideButton.Parent = sidebarScroll
             
             local sideCorner = Instance.new("UICorner")
             sideCorner.CornerRadius = UDim.new(0, 6)
@@ -400,14 +650,13 @@ function PrimordialUI:CreateWindow(options)
             sideLabel.Text = name:lower()
             sideLabel.TextColor3 = Theme.SecondaryText
             sideLabel.TextSize = 12
-            sideLabel.Font = Enum.Font.Gotham
+            sideLabel.Font = ThemeManager.Font
             sideLabel.Parent = sideButton
             
-            -- Create content area with proper scrolling
             local sideContent = Instance.new("ScrollingFrame")
             sideContent.Name = name .. "Content"
-            sideContent.Size = UDim2.new(1, -Theme.SectionPadding * 2, 1, -Theme.SectionPadding * 2)
-            sideContent.Position = UDim2.new(0, Theme.SectionPadding, 0, Theme.SectionPadding)
+            sideContent.Size = UDim2.new(1, -Sizes.SectionPadding * 2, 1, -Sizes.SectionPadding * 2)
+            sideContent.Position = UDim2.new(0, Sizes.SectionPadding, 0, Sizes.SectionPadding)
             sideContent.BackgroundTransparency = 1
             sideContent.BorderSizePixel = 0
             sideContent.ScrollBarThickness = 4
@@ -418,7 +667,6 @@ function PrimordialUI:CreateWindow(options)
             sideContent.CanvasSize = UDim2.new(0, 0, 0, 0)
             sideContent.Parent = contentContainer
             
-            -- Grid layout for sections
             local contentGrid = Instance.new("UIGridLayout")
             contentGrid.CellSize = UDim2.new(0.31, 0, 0, 200)
             contentGrid.CellPadding = UDim2.new(0.035, 0, 0, 12)
@@ -426,7 +674,6 @@ function PrimordialUI:CreateWindow(options)
             contentGrid.FillDirection = Enum.FillDirection.Horizontal
             contentGrid.Parent = sideContent
             
-            -- Update canvas size when content changes
             contentGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
                 sideContent.CanvasSize = UDim2.new(0, 0, 0, contentGrid.AbsoluteContentSize.Y)
             end)
@@ -451,20 +698,20 @@ function PrimordialUI:CreateWindow(options)
             sideTab.Button = sideButton
             sideTab.Content = sideContent
             
-            -- Fixed Section creation with proper rendering
-            function sideTab:CreateSection(sectionName)
+            -- Create Section/Groupbox
+            function sideTab:CreateSection(sectionName, options)
+                options = options or {}
                 local section = {
                     Elements = {},
-                    Frame = nil
+                    Frame = nil,
+                    DependsOn = options.DependsOn
                 }
                 
-                -- Section frame container
                 local sectionContainer = Instance.new("Frame")
                 sectionContainer.Name = sectionName .. "Container"
                 sectionContainer.BackgroundTransparency = 1
                 sectionContainer.Parent = sideContent
                 
-                -- Actual section frame with proper auto-sizing
                 local sectionFrame = Instance.new("Frame")
                 sectionFrame.Name = sectionName
                 sectionFrame.Size = UDim2.new(1, 0, 0, 0)
@@ -474,46 +721,51 @@ function PrimordialUI:CreateWindow(options)
                 sectionFrame.AutomaticSize = Enum.AutomaticSize.Y
                 sectionFrame.Parent = sectionContainer
                 
+                -- Handle dependency
+                if section.DependsOn then
+                    sectionFrame.Visible = section.DependsOn.Value
+                    table.insert(window.Dependencies, {
+                        Element = sectionFrame,
+                        DependsOn = section.DependsOn
+                    })
+                end
+                
                 local sectionCorner = Instance.new("UICorner")
                 sectionCorner.CornerRadius = UDim.new(0, 8)
                 sectionCorner.Parent = sectionFrame
                 
-                -- Section title (always visible)
                 local sectionTitle = Instance.new("TextLabel")
                 sectionTitle.Name = "Title"
                 sectionTitle.Text = sectionName:lower()
-                sectionTitle.Size = UDim2.new(1, -Theme.SectionPadding * 2, 0, 22)
-                sectionTitle.Position = UDim2.new(0, Theme.SectionPadding, 0, 6)
+                sectionTitle.Size = UDim2.new(1, -Sizes.SectionPadding * 2, 0, 22)
+                sectionTitle.Position = UDim2.new(0, Sizes.SectionPadding, 0, 6)
                 sectionTitle.BackgroundTransparency = 1
                 sectionTitle.TextColor3 = Theme.SectionTitle
                 sectionTitle.TextSize = 12
-                sectionTitle.Font = Enum.Font.Gotham
+                sectionTitle.Font = ThemeManager.Font
                 sectionTitle.TextXAlignment = Enum.TextXAlignment.Left
                 sectionTitle.Parent = sectionFrame
                 
-                -- Elements container
                 local elementsContainer = Instance.new("Frame")
                 elementsContainer.Name = "Elements"
-                elementsContainer.Position = UDim2.new(0, Theme.SectionPadding, 0, 32)
-                elementsContainer.Size = UDim2.new(1, -Theme.SectionPadding * 2, 0, 0)
+                elementsContainer.Position = UDim2.new(0, Sizes.SectionPadding, 0, 32)
+                elementsContainer.Size = UDim2.new(1, -Sizes.SectionPadding * 2, 0, 0)
                 elementsContainer.AutomaticSize = Enum.AutomaticSize.Y
                 elementsContainer.BackgroundTransparency = 1
                 elementsContainer.Parent = sectionFrame
                 
                 local elementLayout = Instance.new("UIListLayout")
                 elementLayout.SortOrder = Enum.SortOrder.LayoutOrder
-                elementLayout.Padding = UDim.new(0, Theme.ElementSpacing)
+                elementLayout.Padding = UDim.new(0, Sizes.ElementSpacing)
                 elementLayout.Parent = elementsContainer
                 
-                -- Bottom padding
                 local bottomPadding = Instance.new("Frame")
                 bottomPadding.Name = "BottomPadding"
-                bottomPadding.Size = UDim2.new(1, 0, 0, Theme.SectionPadding)
+                bottomPadding.Size = UDim2.new(1, 0, 0, Sizes.SectionPadding)
                 bottomPadding.BackgroundTransparency = 1
                 bottomPadding.LayoutOrder = 999999
                 bottomPadding.Parent = elementsContainer
                 
-                -- Update section container size
                 sectionFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
                     sectionContainer.Size = UDim2.new(1, 0, 0, sectionFrame.AbsoluteSize.Y)
                     contentGrid.CellSize = UDim2.new(0.31, 0, 0, sectionFrame.AbsoluteSize.Y)
@@ -521,23 +773,245 @@ function PrimordialUI:CreateWindow(options)
                 
                 section.Frame = sectionFrame
                 
-                -- Elements
+                -- Create Tabbox (section with tabs)
+                function section:CreateTabbox(name)
+                    local tabbox = {
+                        Tabs = {},
+                        ActiveTab = nil
+                    }
+                    
+                    local tabboxFrame = Instance.new("Frame")
+                    tabboxFrame.Name = name
+                    tabboxFrame.Size = UDim2.new(1, 0, 0, 200)
+                    tabboxFrame.BackgroundTransparency = 1
+                    tabboxFrame.Parent = elementsContainer
+                    
+                    local tabHeader = Instance.new("Frame")
+                    tabHeader.Size = UDim2.new(1, 0, 0, 25)
+                    tabHeader.BackgroundTransparency = 1
+                    tabHeader.Parent = tabboxFrame
+                    
+                    local tabLayout = Instance.new("UIListLayout")
+                    tabLayout.FillDirection = Enum.FillDirection.Horizontal
+                    tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                    tabLayout.Padding = UDim.new(0, 4)
+                    tabLayout.Parent = tabHeader
+                    
+                    local tabContent = Instance.new("Frame")
+                    tabContent.Position = UDim2.new(0, 0, 0, 30)
+                    tabContent.Size = UDim2.new(1, 0, 1, -30)
+                    tabContent.BackgroundTransparency = 1
+                    tabContent.Parent = tabboxFrame
+                    
+                    function tabbox:AddTab(tabName)
+                        local tab = {
+                            Elements = {}
+                        }
+                        
+                        local tabButton = Instance.new("TextButton")
+                        tabButton.Size = UDim2.new(0, 60, 1, 0)
+                        tabButton.BackgroundColor3 = Theme.TabInactive
+                        tabButton.BackgroundTransparency = 0.5
+                        tabButton.BorderSizePixel = 0
+                        tabButton.Text = tabName
+                        tabButton.TextColor3 = Theme.SecondaryText
+                        tabButton.TextSize = 11
+                        tabButton.Font = ThemeManager.Font
+                        tabButton.AutoButtonColor = false
+                        tabButton.Parent = tabHeader
+                        
+                        local tabCorner = Instance.new("UICorner")
+                        tabCorner.CornerRadius = UDim.new(0, 4)
+                        tabCorner.Parent = tabButton
+                        
+                        local tabFrame = Instance.new("Frame")
+                        tabFrame.Size = UDim2.new(1, 0, 1, 0)
+                        tabFrame.BackgroundTransparency = 1
+                        tabFrame.Visible = false
+                        tabFrame.Parent = tabContent
+                        
+                        tabButton.MouseButton1Click:Connect(function()
+                            for _, t in pairs(tabbox.Tabs) do
+                                t.Frame.Visible = false
+                                t.Button.BackgroundTransparency = 0.5
+                                t.Button.TextColor3 = Theme.SecondaryText
+                            end
+                            
+                            tabFrame.Visible = true
+                            tabButton.BackgroundTransparency = 0.2
+                            tabButton.TextColor3 = Theme.PrimaryText
+                            tabbox.ActiveTab = tab
+                        end)
+                        
+                        tab.Button = tabButton
+                        tab.Frame = tabFrame
+                        
+                        table.insert(tabbox.Tabs, tab)
+                        
+                        if #tabbox.Tabs == 1 then
+                            tabButton.MouseButton1Click:Fire()
+                        end
+                        
+                        return tab
+                    end
+                    
+                    return tabbox
+                end
+                
+                -- Create Label
+                function section:CreateLabel(text)
+                    local label = Instance.new("TextLabel")
+                    label.Text = text
+                    label.Size = UDim2.new(1, 0, 0, 20)
+                    label.BackgroundTransparency = 1
+                    label.TextColor3 = Theme.SecondaryText
+                    label.TextSize = 12
+                    label.Font = ThemeManager.Font
+                    label.TextXAlignment = Enum.TextXAlignment.Left
+                    label.Parent = elementsContainer
+                    
+                    return label
+                end
+                
+                -- Create Divider
+                function section:CreateDivider()
+                    local divider = Instance.new("Frame")
+                    divider.Size = UDim2.new(1, 0, 0, 1)
+                    divider.BackgroundColor3 = Theme.DividerColor
+                    divider.BorderSizePixel = 0
+                    divider.Parent = elementsContainer
+                    
+                    return divider
+                end
+                
+                -- Create Input
+                function section:CreateInput(options)
+                    options = options or {}
+                    local input = {
+                        Value = options.Default or "",
+                        Callback = options.Callback or function() end,
+                        Type = options.Type or "Text"
+                    }
+                    
+                    local inputFrame = Instance.new("Frame")
+                    inputFrame.Name = options.Name or "Input"
+                    inputFrame.Size = UDim2.new(1, 0, 0, Sizes.ElementHeight)
+                    inputFrame.BackgroundTransparency = 1
+                    inputFrame.Parent = elementsContainer
+                    
+                    local label = Instance.new("TextLabel")
+                    label.Text = options.Name or "Input"
+                    label.Size = UDim2.new(0.4, 0, 1, 0)
+                    label.BackgroundTransparency = 1
+                    label.TextColor3 = Theme.PrimaryText
+                    label.TextSize = 12
+                    label.Font = ThemeManager.Font
+                    label.TextXAlignment = Enum.TextXAlignment.Left
+                    label.Parent = inputFrame
+                    
+                    local inputBox = Instance.new("TextBox")
+                    inputBox.Size = UDim2.new(0.6, -4, 1, 0)
+                    inputBox.Position = UDim2.new(0.4, 4, 0, 0)
+                    inputBox.BackgroundColor3 = Theme.ElementBackground
+                    inputBox.BorderSizePixel = 0
+                    inputBox.Text = input.Value
+                    inputBox.TextColor3 = Theme.SecondaryText
+                    inputBox.TextSize = 12
+                    inputBox.Font = ThemeManager.Font
+                    inputBox.PlaceholderText = options.Placeholder or "Enter " .. (options.Name or "value")
+                    inputBox.PlaceholderColor3 = Theme.DimText
+                    inputBox.Parent = inputFrame
+                    
+                    local inputCorner = Instance.new("UICorner")
+                    inputCorner.CornerRadius = UDim.new(0, 4)
+                    inputCorner.Parent = inputBox
+                    
+                    inputBox.FocusLost:Connect(function(enterPressed)
+                        if input.Type == "Number" then
+                            local num = tonumber(inputBox.Text)
+                            if num then
+                                input.Value = num
+                            else
+                                inputBox.Text = tostring(input.Value)
+                            end
+                        else
+                            input.Value = inputBox.Text
+                        end
+                        input.Callback(input.Value)
+                    end)
+                    
+                    return input
+                end
+                
+                -- Create Image
+                function section:CreateImage(options)
+                    options = options or {}
+                    
+                    local imageLabel = Instance.new("ImageLabel")
+                    imageLabel.Size = UDim2.new(1, 0, 0, options.Height or 100)
+                    imageLabel.BackgroundTransparency = 1
+                    imageLabel.Image = options.Image or ""
+                    imageLabel.ScaleType = options.ScaleType or Enum.ScaleType.Fit
+                    imageLabel.Parent = elementsContainer
+                    
+                    return imageLabel
+                end
+                
+                -- Create Viewport (3D model viewer)
+                function section:CreateViewport(options)
+                    options = options or {}
+                    
+                    local viewportFrame = Instance.new("ViewportFrame")
+                    viewportFrame.Size = UDim2.new(1, 0, 0, options.Height or 150)
+                    viewportFrame.BackgroundColor3 = Theme.ElementBackground
+                    viewportFrame.BorderSizePixel = 0
+                    viewportFrame.Parent = elementsContainer
+                    
+                    local viewportCorner = Instance.new("UICorner")
+                    viewportCorner.CornerRadius = UDim.new(0, 4)
+                    viewportCorner.Parent = viewportFrame
+                    
+                    local camera = Instance.new("Camera")
+                    camera.Parent = viewportFrame
+                    viewportFrame.CurrentCamera = camera
+                    
+                    if options.Model then
+                        options.Model:Clone().Parent = viewportFrame
+                        camera.CFrame = CFrame.new(0, 0, 5) * CFrame.Angles(0, math.rad(180), 0)
+                    end
+                    
+                    return viewportFrame
+                end
+                
+                -- All other elements (Checkbox, Slider, Dropdown, Button, Keybind)
+                -- [Previous element implementations remain the same]
+                
                 function section:CreateCheckbox(options)
                     options = options or {}
                     local checkbox = {
                         Value = options.Default or false,
-                        Callback = options.Callback or function() end
+                        Callback = options.Callback or function() end,
+                        DependsOn = options.DependsOn
                     }
                     
                     local checkboxFrame = Instance.new("Frame")
                     checkboxFrame.Name = options.Name or "Checkbox"
-                    checkboxFrame.Size = UDim2.new(1, 0, 0, Theme.ElementHeight)
+                    checkboxFrame.Size = UDim2.new(1, 0, 0, Sizes.ElementHeight)
                     checkboxFrame.BackgroundTransparency = 1
                     checkboxFrame.Parent = elementsContainer
                     
+                    -- Handle dependency
+                    if checkbox.DependsOn then
+                        checkboxFrame.Visible = checkbox.DependsOn.Value
+                        table.insert(window.Dependencies, {
+                            Element = checkboxFrame,
+                            DependsOn = checkbox.DependsOn
+                        })
+                    end
+                    
                     local checkButton = Instance.new("TextButton")
-                    checkButton.Size = UDim2.new(0, Theme.CheckboxSize, 0, Theme.CheckboxSize)
-                    checkButton.Position = UDim2.new(0, 0, 0.5, -Theme.CheckboxSize/2)
+                    checkButton.Size = UDim2.new(0, Sizes.CheckboxSize, 0, Sizes.CheckboxSize)
+                    checkButton.Position = UDim2.new(0, 0, 0.5, -Sizes.CheckboxSize/2)
                     checkButton.BackgroundColor3 = Theme.CheckboxBorder
                     checkButton.BackgroundTransparency = 0.3
                     checkButton.BorderSizePixel = 0
@@ -564,21 +1038,25 @@ function PrimordialUI:CreateWindow(options)
                     
                     local label = Instance.new("TextLabel")
                     label.Text = options.Name or "Checkbox"
-                    label.Position = UDim2.new(0, Theme.CheckboxSize + 6, 0, 0)
-                    label.Size = UDim2.new(1, -(Theme.CheckboxSize + 6), 1, 0)
+                    label.Position = UDim2.new(0, Sizes.CheckboxSize + 6, 0, 0)
+                    label.Size = UDim2.new(1, -(Sizes.CheckboxSize + 6), 1, 0)
                     label.BackgroundTransparency = 1
                     label.TextColor3 = Theme.PrimaryText
                     label.TextSize = 12
-                    label.Font = Enum.Font.Gotham
+                    label.Font = ThemeManager.Font
                     label.TextXAlignment = Enum.TextXAlignment.Left
                     label.Parent = checkboxFrame
                     
+                    -- Add tooltip if provided
+                    if options.Tooltip then
+                        window:AddTooltip(checkboxFrame, options.Tooltip)
+                    end
+                    
                     -- Color Picker Support
-                    local colorPickerX = -8
                     if options.ColorPicker then
                         local colorButton = Instance.new("TextButton")
                         colorButton.Size = UDim2.new(0, 28, 0, 16)
-                        colorButton.Position = UDim2.new(1, colorPickerX - 28, 0.5, -8)
+                        colorButton.Position = UDim2.new(1, -36, 0.5, -8)
                         colorButton.BackgroundColor3 = options.ColorPicker.Default or Color3.new(1, 1, 1)
                         colorButton.BorderSizePixel = 0
                         colorButton.Text = ""
@@ -612,6 +1090,13 @@ function PrimordialUI:CreateWindow(options)
                         checkbox.Value = value
                         CreateTween(checkMark, {BackgroundTransparency = value and 0 or 1}, 0.15)
                         checkbox.Callback(value)
+                        
+                        -- Update dependencies
+                        for _, dep in pairs(window.Dependencies) do
+                            if dep.DependsOn == checkbox then
+                                dep.Element.Visible = value
+                            end
+                        end
                     end
                     
                     checkButton.MouseButton1Click:Connect(function()
@@ -630,7 +1115,7 @@ function PrimordialUI:CreateWindow(options)
                     
                     local sliderFrame = Instance.new("Frame")
                     sliderFrame.Name = options.Name or "Slider"
-                    sliderFrame.Size = UDim2.new(1, 0, 0, Theme.ElementHeight + 20)
+                    sliderFrame.Size = UDim2.new(1, 0, 0, Sizes.ElementHeight + 20)
                     sliderFrame.BackgroundTransparency = 1
                     sliderFrame.Parent = elementsContainer
                     
@@ -640,7 +1125,7 @@ function PrimordialUI:CreateWindow(options)
                     label.BackgroundTransparency = 1
                     label.TextColor3 = Theme.PrimaryText
                     label.TextSize = 12
-                    label.Font = Enum.Font.Gotham
+                    label.Font = ThemeManager.Font
                     label.TextXAlignment = Enum.TextXAlignment.Left
                     label.Parent = sliderFrame
                     
@@ -651,19 +1136,19 @@ function PrimordialUI:CreateWindow(options)
                     valueLabel.BackgroundTransparency = 1
                     valueLabel.TextColor3 = Theme.SecondaryText
                     valueLabel.TextSize = 12
-                    valueLabel.Font = Enum.Font.Gotham
+                    valueLabel.Font = ThemeManager.Font
                     valueLabel.TextXAlignment = Enum.TextXAlignment.Right
                     valueLabel.Parent = sliderFrame
                     
                     local sliderTrack = Instance.new("Frame")
-                    sliderTrack.Size = UDim2.new(1, 0, 0, Theme.SliderTrackHeight)
+                    sliderTrack.Size = UDim2.new(1, 0, 0, Sizes.SliderTrackHeight)
                     sliderTrack.Position = UDim2.new(0, 0, 0, 24)
                     sliderTrack.BackgroundColor3 = Theme.SliderTrack
                     sliderTrack.BorderSizePixel = 0
                     sliderTrack.Parent = sliderFrame
                     
                     local trackCorner = Instance.new("UICorner")
-                    trackCorner.CornerRadius = UDim.new(0, Theme.SliderTrackHeight/2)
+                    trackCorner.CornerRadius = UDim.new(0, Sizes.SliderTrackHeight/2)
                     trackCorner.Parent = sliderTrack
                     
                     local sliderFill = Instance.new("Frame")
@@ -673,12 +1158,12 @@ function PrimordialUI:CreateWindow(options)
                     sliderFill.Parent = sliderTrack
                     
                     local fillCorner = Instance.new("UICorner")
-                    fillCorner.CornerRadius = UDim.new(0, Theme.SliderTrackHeight/2)
+                    fillCorner.CornerRadius = UDim.new(0, Sizes.SliderTrackHeight/2)
                     fillCorner.Parent = sliderFill
                     
                     local sliderThumb = Instance.new("TextButton")
-                    sliderThumb.Size = UDim2.new(0, Theme.SliderThumbSize, 0, Theme.SliderThumbSize)
-                    sliderThumb.Position = UDim2.new(0.5, -Theme.SliderThumbSize/2, 0.5, -Theme.SliderThumbSize/2)
+                    sliderThumb.Size = UDim2.new(0, Sizes.SliderThumbSize, 0, Sizes.SliderThumbSize)
+                    sliderThumb.Position = UDim2.new(0.5, -Sizes.SliderThumbSize/2, 0.5, -Sizes.SliderThumbSize/2)
                     sliderThumb.BackgroundColor3 = Theme.SliderThumb
                     sliderThumb.BorderSizePixel = 0
                     sliderThumb.Text = ""
@@ -698,7 +1183,7 @@ function PrimordialUI:CreateWindow(options)
                         
                         slider.Value = math.floor(min + (max - min) * percentage)
                         sliderFill.Size = UDim2.new(percentage, 0, 1, 0)
-                        sliderThumb.Position = UDim2.new(percentage, -Theme.SliderThumbSize/2, 0.5, -Theme.SliderThumbSize/2)
+                        sliderThumb.Position = UDim2.new(percentage, -Sizes.SliderThumbSize/2, 0.5, -Sizes.SliderThumbSize/2)
                         valueLabel.Text = tostring(slider.Value) .. (options.Suffix or "")
                         slider.Callback(slider.Value)
                     end
@@ -710,20 +1195,23 @@ function PrimordialUI:CreateWindow(options)
                     end)
                     
                     sliderTrack.InputBegan:Connect(function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or
+                           (IsMobile and input.UserInputType == Enum.UserInputType.Touch) then
                             dragging = true
                             updateSlider(input)
                         end
                     end)
                     
                     UserInputService.InputEnded:Connect(function(input)
-                        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 or
+                           (IsMobile and input.UserInputType == Enum.UserInputType.Touch) then
                             dragging = false
                         end
                     end)
                     
                     UserInputService.InputChanged:Connect(function(input)
-                        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or
+                           (IsMobile and input.UserInputType == Enum.UserInputType.Touch)) then
                             updateSlider(input)
                         end
                     end)
@@ -734,7 +1222,7 @@ function PrimordialUI:CreateWindow(options)
                         slider.Value = math.clamp(value, min, max)
                         local percentage = (slider.Value - min) / (max - min)
                         sliderFill.Size = UDim2.new(percentage, 0, 1, 0)
-                        sliderThumb.Position = UDim2.new(percentage, -Theme.SliderThumbSize/2, 0.5, -Theme.SliderThumbSize/2)
+                        sliderThumb.Position = UDim2.new(percentage, -Sizes.SliderThumbSize/2, 0.5, -Sizes.SliderThumbSize/2)
                         valueLabel.Text = tostring(slider.Value) .. (options.Suffix or "")
                         slider.Callback(slider.Value)
                     end
@@ -744,7 +1232,6 @@ function PrimordialUI:CreateWindow(options)
                     return slider
                 end
                 
-                -- Fixed Dropdown with proper width
                 function section:CreateDropdown(options)
                     options = options or {}
                     local dropdown = {
@@ -757,7 +1244,7 @@ function PrimordialUI:CreateWindow(options)
                     
                     local dropdownFrame = Instance.new("Frame")
                     dropdownFrame.Name = options.Name or "Dropdown"
-                    dropdownFrame.Size = UDim2.new(1, 0, 0, Theme.ElementHeight)
+                    dropdownFrame.Size = UDim2.new(1, 0, 0, Sizes.ElementHeight)
                     dropdownFrame.BackgroundTransparency = 1
                     dropdownFrame.Parent = elementsContainer
                     
@@ -767,7 +1254,7 @@ function PrimordialUI:CreateWindow(options)
                     label.BackgroundTransparency = 1
                     label.TextColor3 = Theme.PrimaryText
                     label.TextSize = 12
-                    label.Font = Enum.Font.Gotham
+                    label.Font = ThemeManager.Font
                     label.TextXAlignment = Enum.TextXAlignment.Left
                     label.Parent = dropdownFrame
                     
@@ -779,7 +1266,7 @@ function PrimordialUI:CreateWindow(options)
                     dropButton.Text = dropdown.Value
                     dropButton.TextColor3 = Theme.SecondaryText
                     dropButton.TextSize = 12
-                    dropButton.Font = Enum.Font.Gotham
+                    dropButton.Font = ThemeManager.Font
                     dropButton.AutoButtonColor = false
                     dropButton.ClipsDescendants = true
                     dropButton.Parent = dropdownFrame
@@ -801,11 +1288,10 @@ function PrimordialUI:CreateWindow(options)
                     chevron.BackgroundTransparency = 1
                     chevron.TextColor3 = Theme.DimText
                     chevron.TextSize = 10
-                    chevron.Font = Enum.Font.Gotham
+                    chevron.Font = ThemeManager.Font
                     chevron.Parent = dropButton
                     dropdown.Chevron = chevron
                     
-                    -- Create dropdown list with fixed width
                     local dropList = Instance.new("Frame")
                     dropList.Size = UDim2.new(0, dropButton.AbsoluteSize.X, 0, math.min(#options.Options * 26, 130))
                     dropList.BackgroundColor3 = Theme.ElementBackground
@@ -815,7 +1301,6 @@ function PrimordialUI:CreateWindow(options)
                     dropList.Parent = screenGui
                     dropdown.List = dropList
                     
-                    -- Track dropdown for cleanup
                     table.insert(window.Dropdowns, dropdown)
                     
                     local listCorner = Instance.new("UICorner")
@@ -842,7 +1327,6 @@ function PrimordialUI:CreateWindow(options)
                     listLayout.SortOrder = Enum.SortOrder.LayoutOrder
                     listLayout.Parent = listScroll
                     
-                    -- Update dropdown position
                     local function updateDropListPosition()
                         if dropList.Visible then
                             local buttonPos = dropButton.AbsolutePosition
@@ -859,7 +1343,7 @@ function PrimordialUI:CreateWindow(options)
                         optionButton.Text = option
                         optionButton.TextColor3 = Theme.SecondaryText
                         optionButton.TextSize = 12
-                        optionButton.Font = Enum.Font.Gotham
+                        optionButton.Font = ThemeManager.Font
                         optionButton.AutoButtonColor = false
                         optionButton.ZIndex = 1002
                         optionButton.Parent = listScroll
@@ -886,7 +1370,6 @@ function PrimordialUI:CreateWindow(options)
                     end
                     
                     dropButton.MouseButton1Click:Connect(function()
-                        -- Close other dropdowns
                         for _, otherDropdown in pairs(window.Dropdowns) do
                             if otherDropdown ~= dropdown and otherDropdown.List and otherDropdown.List.Visible then
                                 otherDropdown.List.Visible = false
@@ -905,7 +1388,6 @@ function PrimordialUI:CreateWindow(options)
                         end
                     end)
                     
-                    -- Update position when window moves
                     mainFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(updateDropListPosition)
                     dropdownFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(updateDropListPosition)
                     
@@ -920,14 +1402,14 @@ function PrimordialUI:CreateWindow(options)
                     
                     local buttonFrame = Instance.new("TextButton")
                     buttonFrame.Name = options.Name or "Button"
-                    buttonFrame.Size = UDim2.new(1, 0, 0, Theme.ElementHeight + 2)
+                    buttonFrame.Size = UDim2.new(1, 0, 0, Sizes.ElementHeight + 2)
                     buttonFrame.BackgroundColor3 = Theme.Accent
                     buttonFrame.BackgroundTransparency = 0.1
                     buttonFrame.BorderSizePixel = 0
                     buttonFrame.Text = options.Name or "Button"
                     buttonFrame.TextColor3 = Theme.PrimaryText
                     buttonFrame.TextSize = 12
-                    buttonFrame.Font = Enum.Font.Gotham
+                    buttonFrame.Font = ThemeManager.Font
                     buttonFrame.AutoButtonColor = false
                     buttonFrame.Parent = elementsContainer
                     
@@ -953,7 +1435,6 @@ function PrimordialUI:CreateWindow(options)
                     return button
                 end
                 
-                -- Fixed Keybind
                 function section:CreateKeybind(options)
                     options = options or {}
                     local keybind = {
@@ -962,14 +1443,13 @@ function PrimordialUI:CreateWindow(options)
                         Listening = false
                     }
                     
-                    -- Validate and set default key
                     if not keybind.Key then
                         keybind.Key = Enum.KeyCode.F
                     end
                     
                     local keybindFrame = Instance.new("Frame")
                     keybindFrame.Name = options.Name or "Keybind"
-                    keybindFrame.Size = UDim2.new(1, 0, 0, Theme.ElementHeight)
+                    keybindFrame.Size = UDim2.new(1, 0, 0, Sizes.ElementHeight)
                     keybindFrame.BackgroundTransparency = 1
                     keybindFrame.Parent = elementsContainer
                     
@@ -979,7 +1459,7 @@ function PrimordialUI:CreateWindow(options)
                     label.BackgroundTransparency = 1
                     label.TextColor3 = Theme.PrimaryText
                     label.TextSize = 12
-                    label.Font = Enum.Font.Gotham
+                    label.Font = ThemeManager.Font
                     label.TextXAlignment = Enum.TextXAlignment.Left
                     label.Parent = keybindFrame
                     
@@ -990,11 +1470,10 @@ function PrimordialUI:CreateWindow(options)
                     keyButton.BorderSizePixel = 0
                     keyButton.TextColor3 = Theme.SecondaryText
                     keyButton.TextSize = 11
-                    keyButton.Font = Enum.Font.Gotham
+                    keyButton.Font = ThemeManager.Font
                     keyButton.AutoButtonColor = false
                     keyButton.Parent = keybindFrame
                     
-                    -- Display key name
                     local function getKeyName()
                         if typeof(keybind.Key) == "EnumItem" then
                             if keybind.Key.EnumType == Enum.KeyCode then
@@ -1044,6 +1523,21 @@ function PrimordialUI:CreateWindow(options)
                             keyButton.Text = getKeyName()
                             keyButton.TextColor3 = Theme.SecondaryText
                             keybind.Listening = false
+                            
+                            -- Update keybind menu if exists
+                            if window.KeybindMenu then
+                                -- Add keybind to menu
+                                local keybindLabel = Instance.new("TextLabel")
+                                keybindLabel.Text = (options.Name or "Keybind") .. ": " .. getKeyName()
+                                keybindLabel.Size = UDim2.new(1, -10, 0, 20)
+                                keybindLabel.Position = UDim2.new(0, 5, 0, 35)
+                                keybindLabel.BackgroundTransparency = 1
+                                keybindLabel.TextColor3 = Theme.SecondaryText
+                                keybindLabel.TextSize = 12
+                                keybindLabel.Font = ThemeManager.Font
+                                keybindLabel.TextXAlignment = Enum.TextXAlignment.Left
+                                keybindLabel.Parent = window.KeybindMenu
+                            end
                         elseif not gameProcessed then
                             if (typeof(keybind.Key) == "EnumItem") then
                                 if (keybind.Key.EnumType == Enum.KeyCode and input.KeyCode == keybind.Key) or
@@ -1064,7 +1558,6 @@ function PrimordialUI:CreateWindow(options)
             return sideTab
         end
         
-        -- Select Side Tab
         function bottomTab:SelectSideTab(sideTab)
             for _, st in pairs(bottomTab.SideTabs) do
                 if st.Content then
@@ -1094,7 +1587,6 @@ function PrimordialUI:CreateWindow(options)
     
     -- Select Bottom Tab
     function window:SelectBottomTab(bottomTab)
-        -- Hide all side tabs from all bottom tabs
         for _, bt in pairs(window.BottomTabs) do
             for _, st in pairs(bt.SideTabs) do
                 if st.Button then
@@ -1110,14 +1602,12 @@ function PrimordialUI:CreateWindow(options)
             end
         end
         
-        -- Show this tab's side tabs
         for _, st in pairs(bottomTab.SideTabs) do
             if st.Button then
                 st.Button.Visible = true
             end
         end
         
-        -- Highlight bottom tab
         if bottomTab.IconLabel and bottomTab.NameLabel then
             bottomTab.IconLabel.TextColor3 = Theme.Accent
             bottomTab.NameLabel.TextColor3 = Theme.Accent
@@ -1125,17 +1615,15 @@ function PrimordialUI:CreateWindow(options)
         
         window.ActiveBottomTab = bottomTab
         
-        -- Auto-select first side tab
         if #bottomTab.SideTabs > 0 then
             bottomTab:SelectSideTab(bottomTab.SideTabs[1])
         end
     end
     
-    -- COMPLETELY FIXED Color Picker with proper HSV gradient
+    -- FIXED Color Picker with correct HSV gradient
     function window:CreateColorPicker(options)
         options = options or {}
         
-        -- Close existing color pickers
         for _, picker in pairs(window.ColorPickers) do
             if picker then
                 picker:Destroy()
@@ -1148,7 +1636,6 @@ function PrimordialUI:CreateWindow(options)
             Callback = options.Callback or function() end
         }
         
-        -- Create color picker window
         local pickerFrame = Instance.new("Frame")
         pickerFrame.Name = "ColorPicker"
         pickerFrame.Size = UDim2.new(0, 260, 0, 300)
@@ -1174,7 +1661,6 @@ function PrimordialUI:CreateWindow(options)
         pickerBorder.Thickness = 1
         pickerBorder.Parent = pickerFrame
         
-        -- Title Bar
         local titleBar = Instance.new("Frame")
         titleBar.Size = UDim2.new(1, 0, 0, 28)
         titleBar.BackgroundColor3 = Theme.PanelBackground
@@ -1198,17 +1684,16 @@ function PrimordialUI:CreateWindow(options)
         titleText.BackgroundTransparency = 1
         titleText.TextColor3 = Theme.PrimaryText
         titleText.TextSize = 12
-        titleText.Font = Enum.Font.Gotham
+        titleText.Font = ThemeManager.Font
         titleText.Parent = titleBar
         
-        -- Proper X close button
         local closeButton = Instance.new("TextButton")
         closeButton.Size = UDim2.new(0, 20, 0, 20)
         closeButton.Position = UDim2.new(1, -24, 0.5, -10)
         closeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
         closeButton.BackgroundTransparency = 0
         closeButton.BorderSizePixel = 0
-        closeButton.Text = "×"  -- Proper X character
+        closeButton.Text = "×"
         closeButton.TextColor3 = Theme.SecondaryText
         closeButton.TextSize = 18
         closeButton.Font = Enum.Font.SourceSans
@@ -1235,48 +1720,60 @@ function PrimordialUI:CreateWindow(options)
         
         MakeDraggable(pickerFrame, titleBar)
         
-        -- FIXED Saturation/Value Field with dynamic hue-based gradient
+        -- CORRECT HSV Implementation
         local satValFrame = Instance.new("ImageButton")
         satValFrame.Size = UDim2.new(0, 180, 0, 180)
         satValFrame.Position = UDim2.new(0, 12, 0, 38)
         satValFrame.BorderSizePixel = 0
         satValFrame.AutoButtonColor = false
-        satValFrame.BackgroundColor3 = Color3.fromHSV(0, 1, 1) -- This will be updated dynamically
         satValFrame.Parent = pickerFrame
         
         local satValCorner = Instance.new("UICorner")
         satValCorner.CornerRadius = UDim.new(0, 4)
         satValCorner.Parent = satValFrame
         
-        -- White to transparent gradient (for saturation)
+        -- Create the HSV gradient correctly
+        local hueFrame = Instance.new("Frame")
+        hueFrame.Size = UDim2.new(1, 0, 1, 0)
+        hueFrame.BackgroundColor3 = Color3.fromHSV(0, 1, 1) -- This will be updated
+        hueFrame.BorderSizePixel = 0
+        hueFrame.Parent = satValFrame
+        
+        local hueCorner = Instance.new("UICorner")
+        hueCorner.CornerRadius = UDim.new(0, 4)
+        hueCorner.Parent = hueFrame
+        
+        -- White to transparent (left to right for saturation)
         local satGradient = Instance.new("UIGradient")
-        satGradient.Color = ColorSequence.new(Color3.new(1, 1, 1))
+        satGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+            ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1))
+        })
         satGradient.Transparency = NumberSequence.new({
             NumberSequenceKeypoint.new(0, 0),
             NumberSequenceKeypoint.new(1, 1)
         })
         satGradient.Rotation = 0
-        satGradient.Parent = satValFrame
+        satGradient.Parent = hueFrame
         
-        -- Black gradient overlay (for value)
-        local valOverlay = Instance.new("Frame")
-        valOverlay.Size = UDim2.new(1, 0, 1, 0)
-        valOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
-        valOverlay.BorderSizePixel = 0
-        valOverlay.Parent = satValFrame
+        -- Black gradient (top to bottom for value)
+        local valFrame = Instance.new("Frame")
+        valFrame.Size = UDim2.new(1, 0, 1, 0)
+        valFrame.BackgroundTransparency = 1
+        valFrame.BorderSizePixel = 0
+        valFrame.Parent = satValFrame
         
         local valGradient = Instance.new("UIGradient")
-        valGradient.Color = ColorSequence.new(Color3.new(0, 0, 0))
-        valGradient.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 1),
-            NumberSequenceKeypoint.new(1, 0)
+        valGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+            ColorSequenceKeypoint.new(1, Color3.new(0, 0, 0))
         })
-        valGradient.Rotation = -90
-        valGradient.Parent = valOverlay
+        valGradient.Rotation = 90
+        valGradient.Parent = valFrame
         
-        local valCorner = Instance.new("UICorner")
-        valCorner.CornerRadius = UDim.new(0, 4)
-        valCorner.Parent = valOverlay
+        local valCorner2 = Instance.new("UICorner")
+        valCorner2.CornerRadius = UDim.new(0, 4)
+        valCorner2.Parent = valFrame
         
         local satValCursor = Instance.new("Frame")
         satValCursor.Size = UDim2.new(0, 8, 0, 8)
@@ -1296,17 +1793,17 @@ function PrimordialUI:CreateWindow(options)
         cursorBorder.Parent = satValCursor
         
         -- Hue Slider
-        local hueFrame = Instance.new("ImageButton")
-        hueFrame.Size = UDim2.new(0, 24, 0, 180)
-        hueFrame.Position = UDim2.new(0, 204, 0, 38)
-        hueFrame.BackgroundColor3 = Color3.new(1, 1, 1)
-        hueFrame.BorderSizePixel = 0
-        hueFrame.AutoButtonColor = false
-        hueFrame.Parent = pickerFrame
+        local hueSlider = Instance.new("ImageButton")
+        hueSlider.Size = UDim2.new(0, 24, 0, 180)
+        hueSlider.Position = UDim2.new(0, 204, 0, 38)
+        hueSlider.BackgroundColor3 = Color3.new(1, 1, 1)
+        hueSlider.BorderSizePixel = 0
+        hueSlider.AutoButtonColor = false
+        hueSlider.Parent = pickerFrame
         
-        local hueCorner = Instance.new("UICorner")
-        hueCorner.CornerRadius = UDim.new(0, 4)
-        hueCorner.Parent = hueFrame
+        local hueSliderCorner = Instance.new("UICorner")
+        hueSliderCorner.CornerRadius = UDim.new(0, 4)
+        hueSliderCorner.Parent = hueSlider
         
         local hueGradient = Instance.new("UIGradient")
         hueGradient.Color = ColorSequence.new({
@@ -1319,14 +1816,14 @@ function PrimordialUI:CreateWindow(options)
             ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
         })
         hueGradient.Rotation = 90
-        hueGradient.Parent = hueFrame
+        hueGradient.Parent = hueSlider
         
         local hueCursor = Instance.new("Frame")
         hueCursor.Size = UDim2.new(1, 4, 0, 4)
         hueCursor.Position = UDim2.new(0, -2, 0, -2)
         hueCursor.BackgroundColor3 = Color3.new(1, 1, 1)
         hueCursor.BorderSizePixel = 0
-        hueCursor.Parent = hueFrame
+        hueCursor.Parent = hueSlider
         
         local hueCursorCorner = Instance.new("UICorner")
         hueCursorCorner.CornerRadius = UDim.new(0, 2)
@@ -1363,7 +1860,7 @@ function PrimordialUI:CreateWindow(options)
             inputBox.Text = tostring(value)
             inputBox.TextColor3 = Theme.PrimaryText
             inputBox.TextSize = 11
-            inputBox.Font = Enum.Font.Gotham
+            inputBox.Font = ThemeManager.Font
             inputBox.PlaceholderText = label
             inputBox.PlaceholderColor3 = Theme.DimText
             inputBox.Parent = inputFrame
@@ -1392,7 +1889,7 @@ function PrimordialUI:CreateWindow(options)
         )
         hexInput.TextColor3 = Theme.PrimaryText
         hexInput.TextSize = 12
-        hexInput.Font = Enum.Font.Gotham
+        hexInput.Font = ThemeManager.Font
         hexInput.PlaceholderText = "#FFFFFF"
         hexInput.PlaceholderColor3 = Theme.DimText
         hexInput.Parent = pickerFrame
@@ -1404,12 +1901,11 @@ function PrimordialUI:CreateWindow(options)
         -- Color picker logic
         local hue, sat, val = colorPicker.Color:ToHSV()
         
-        -- CRITICAL FIX: Update saturation/value background based on hue
         local function updateColor()
             colorPicker.Color = Color3.fromHSV(hue, sat, val)
             
-            -- THIS IS THE FIX: Update the background color to the current hue
-            satValFrame.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
+            -- Update the hue frame background to the current hue
+            hueFrame.BackgroundColor3 = Color3.fromHSV(hue, 1, 1)
             
             rInput.Text = tostring(math.floor(colorPicker.Color.R * 255))
             gInput.Text = tostring(math.floor(colorPicker.Color.G * 255))
@@ -1441,9 +1937,9 @@ function PrimordialUI:CreateWindow(options)
         -- Hue selection
         local hueDragging = false
         
-        hueFrame.MouseButton1Down:Connect(function()
+        hueSlider.MouseButton1Down:Connect(function()
             hueDragging = true
-            local relativeY = math.clamp((Mouse.Y - hueFrame.AbsolutePosition.Y) / hueFrame.AbsoluteSize.Y, 0, 1)
+            local relativeY = math.clamp((Mouse.Y - hueSlider.AbsolutePosition.Y) / hueSlider.AbsoluteSize.Y, 0, 1)
             
             hue = relativeY
             hueCursor.Position = UDim2.new(0, -2, relativeY, -2)
@@ -1451,7 +1947,8 @@ function PrimordialUI:CreateWindow(options)
         end)
         
         UserInputService.InputChanged:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseMovement then
+            if input.UserInputType == Enum.UserInputType.MouseMovement or 
+               (IsMobile and input.UserInputType == Enum.UserInputType.Touch) then
                 if satValDragging then
                     local relativeX = math.clamp((Mouse.X - satValFrame.AbsolutePosition.X) / satValFrame.AbsoluteSize.X, 0, 1)
                     local relativeY = math.clamp((Mouse.Y - satValFrame.AbsolutePosition.Y) / satValFrame.AbsoluteSize.Y, 0, 1)
@@ -1462,7 +1959,7 @@ function PrimordialUI:CreateWindow(options)
                     satValCursor.Position = UDim2.new(relativeX, -4, relativeY, -4)
                     updateColor()
                 elseif hueDragging then
-                    local relativeY = math.clamp((Mouse.Y - hueFrame.AbsolutePosition.Y) / hueFrame.AbsoluteSize.Y, 0, 1)
+                    local relativeY = math.clamp((Mouse.Y - hueSlider.AbsolutePosition.Y) / hueSlider.AbsoluteSize.Y, 0, 1)
                     
                     hue = relativeY
                     hueCursor.Position = UDim2.new(0, -2, relativeY, -2)
@@ -1472,7 +1969,8 @@ function PrimordialUI:CreateWindow(options)
         end)
         
         UserInputService.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or
+               (IsMobile and input.UserInputType == Enum.UserInputType.Touch) then
                 satValDragging = false
                 hueDragging = false
             end
@@ -1481,17 +1979,62 @@ function PrimordialUI:CreateWindow(options)
         -- Initialize positions
         satValCursor.Position = UDim2.new(sat, -4, 1 - val, -4)
         hueCursor.Position = UDim2.new(0, -2, hue, -2)
-        updateColor() -- This will set the initial background color
+        updateColor()
         
         return colorPicker
     end
     
-    -- Toggle visibility
+    -- Draggable Button
+    function window:AddDraggableButton(options)
+        options = options or {}
+        
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0, options.Width or 100, 0, options.Height or 30)
+        button.Position = options.Position or UDim2.new(0.5, -50, 0.5, -15)
+        button.BackgroundColor3 = Theme.Accent
+        button.BorderSizePixel = 0
+        button.Text = options.Text or "Button"
+        button.TextColor3 = Theme.PrimaryText
+        button.TextSize = 12
+        button.Font = ThemeManager.Font
+        button.AutoButtonColor = false
+        button.Parent = screenGui
+        
+        local buttonCorner = Instance.new("UICorner")
+        buttonCorner.CornerRadius = UDim.new(0, 6)
+        buttonCorner.Parent = button
+        
+        MakeDraggable(button)
+        
+        button.MouseButton1Click:Connect(options.Callback or function() end)
+        
+        return button
+    end
+    
+    -- Toggle Window
     function window:Toggle()
         mainFrame.Visible = not mainFrame.Visible
         if not mainFrame.Visible then
             closeAllDropdowns()
         end
+    end
+    
+    -- Set OnUnload callback
+    function window:OnUnload(callback)
+        window.OnUnload = callback
+    end
+    
+    -- Unload function
+    function window:Unload()
+        if window.OnUnload then
+            window.OnUnload()
+        end
+        
+        if window.CustomCursor then
+            UserInputService.MouseIconEnabled = true
+        end
+        
+        screenGui:Destroy()
     end
     
     -- Keybind for toggle
@@ -1500,6 +2043,15 @@ function PrimordialUI:CreateWindow(options)
             window:Toggle()
         end
     end)
+    
+    -- Toggle keybind menu
+    if window.KeybindMenu then
+        UserInputService.InputBegan:Connect(function(input, gameProcessed)
+            if not gameProcessed and input.KeyCode == Enum.KeyCode.Insert then
+                window.KeybindMenu.Visible = not window.KeybindMenu.Visible
+            end
+        end)
+    end
     
     return window
 end
